@@ -43,7 +43,7 @@ Passwords are bcrypt-hashed. Middleware verifies the JWT (401 if missing/invalid
 
 ## Frontend
 
-Login, debounced (350 ms) patient search, records table with pagination, role badge and role-aware captions (Admin: "every patient", Doctor: "your patients"). Token kept in `sessionStorage`. Vite proxies `/api` to `:4000`.
+Login, debounced (350 ms) patient search, records table with pagination, role badge and role-aware captions (Admin: "All patients", Doctor: "My patients"). Token kept in `sessionStorage`. Vite proxies `/api` to `:4000`.
 
 ## Assumptions & trade-offs
 
