@@ -15,6 +15,8 @@ npm test           # 17 tests (RBAC + search)
 
 **Demo logins:** `admin / admin123` · `dr.smith / doctor123` · `dr.jones / doctor123`
 
+**Troubleshooting:** `npm run setup` needs Docker Desktop running and ports 5432 (PostgreSQL), 4000 (API) and 5173 (UI) free. If 5173 is taken, Vite silently moves to another port.
+
 ## Stack
 
 Node 22 · Express 5 · TypeScript · Prisma 6 · PostgreSQL 16 (Docker) · JWT · vitest + supertest · React + Vite + TypeScript
