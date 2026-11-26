@@ -50,3 +50,10 @@ h2 { font-size: 1.1rem; margin: 0 0 4px; }
 .patient-item { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; background: transparent; color: var(--text); border: 1px solid transparent; }
 .patient-item:hover { background: #f0f3f8; }
 .patient-item.selected { background: #e8f0ff; border-color: var(--primary); }
+
+/* Records table */
+table.records { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.9rem; }
+table.records th { text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); padding: 8px; border-bottom: 1px solid var(--border); }
+table.records td { padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+table.records td:first-child { white-space: nowrap; }
+.pager { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; }

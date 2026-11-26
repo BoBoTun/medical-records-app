@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from "./lib/AuthContext";
 import LoginPage from "./components/LoginPage";
 import PatientList from "./components/PatientList";
 import type { Patient } from "./lib/types";
-
+import RecordsPanel from "./components/RecordsPanel";
 function Shell() {
   const { user, logout } = useAuth();
   const [selected, setSelected] = useState<Patient | null>(null);
@@ -23,16 +23,13 @@ function Shell() {
       </header>
       <main className="layout">
         <PatientList selectedId={selected?.id ?? null} onSelect={setSelected} />
-        <section className="card">
-          {selected ? (
-            <>
-              <h2>{selected.name}</h2>
-              <p className="muted">Records table comes next.</p>
-            </>
-          ) : (
+                {selected ? (
+          <RecordsPanel key={selected.id} patient={selected} />
+        ) : (
+          <section className="card">
             <p className="muted">Select a patient to view records.</p>
-          )}
-        </section>
+          </section>
+        )}
       </main>
     </div>
   );
