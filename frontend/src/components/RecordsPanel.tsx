@@ -5,6 +5,11 @@ import type { Patient, RecordsPage } from "../lib/types";
 
 const PAGE_SIZE = 10;
 
+/**
+ * Right panel: paginated medical records of the selected patient.
+ * The server already filters by role (doctor: own records, admin: all);
+ * the caption below only tells the user which view they are looking at.
+ */
 export default function RecordsPanel({ patient }: { patient: Patient }) {
   const { user } = useAuth();
   const [page, setPage] = useState(1);
@@ -17,6 +22,7 @@ export default function RecordsPanel({ patient }: { patient: Patient }) {
     setPage(1);
   }, [patient.id]);
 
+  // Reload whenever the patient or page changes. `cancelled` ignores responses that arrive late.
   useEffect(() => {
     let cancelled = false;
     setLoading(true);

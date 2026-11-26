@@ -1,3 +1,7 @@
+/**
+ * Integration tests for GET /patients (name search with role-based scoping).
+ * Runs against the seeded database through supertest.
+ */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../app.js";
@@ -8,6 +12,7 @@ async function login(username: string, password: string): Promise<string> {
   return res.body.token as string;
 }
 
+/** Calls the search endpoint; the token is optional so we can test the unauthenticated case. */
 const search = (token?: string, query = "") => {
   const req = request(app).get(`/patients${query}`);
   return token ? req.set("Authorization", `Bearer ${token}`) : req;
@@ -43,6 +48,7 @@ describe("GET /patients", () => {
     const res = await search(smithToken, "?limit=50");
     expect(res.status).toBe(200);
     expect(res.body.patients.length).toBeGreaterThan(0);
+    // Verify directly in the database that every returned patient has a record by dr.smith.
     for (const p of res.body.patients) {
       const count = await prisma.medicalRecord.count({ where: { patientId: p.id, doctorId: smithId } });
       expect(count).toBeGreaterThan(0);

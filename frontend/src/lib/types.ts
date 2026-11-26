@@ -1,3 +1,5 @@
+// Shapes of the JSON returned by the backend API.
+
 export type Role = "DOCTOR" | "ADMIN";
 
 export interface User {
@@ -10,7 +12,7 @@ export interface User {
 export interface Patient {
   id: string;
   name: string;
-  dateOfBirth: string; // "YYYY-MM-DDT00:00:00.000Z"
+  dateOfBirth: string; // "YYYY-MM-DDT00:00:00.000Z"; the UI shows only the first 10 characters
 }
 
 export interface MedicalRecord {

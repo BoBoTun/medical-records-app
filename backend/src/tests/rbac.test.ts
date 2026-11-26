@@ -1,3 +1,8 @@
+/**
+ * Integration tests for authentication, RBAC, validation and pagination of
+ * POST /auth/login and GET /patients/:id/records.
+ * They run against the real database (seeded with `npm run db:seed`) through supertest.
+ */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../app.js";
@@ -8,6 +13,7 @@ async function login(username: string, password: string): Promise<string> {
   return res.body.token as string;
 }
 
+/** Calls the records endpoint; the token is optional so we can test the unauthenticated case. */
 const get = (patientId: string, token?: string, query = "") => {
   const req = request(app).get(`/patients/${patientId}/records${query}`);
   return token ? req.set("Authorization", `Bearer ${token}`) : req;
@@ -29,6 +35,7 @@ beforeAll(async () => {
   const own = await prisma.medicalRecord.findFirstOrThrow({ where: { doctorId: smithId } });
   patientWithSmith = own.patientId;
 
+  // A patient who has records, but none written by dr.smith.
   const other = await prisma.patient.findFirstOrThrow({
     where: { records: { some: {}, none: { doctorId: smithId } } },
   });
@@ -52,7 +59,7 @@ describe("POST /auth/login", () => {
     const unknown = await request(app).post("/auth/login").send({ username: "ghost", password: "nope" });
     expect(wrong.status).toBe(401);
     expect(unknown.status).toBe(401);
-    expect(wrong.body).toEqual(unknown.body);
+    expect(wrong.body).toEqual(unknown.body); // identical, so usernames cannot be enumerated
   });
 
   it("returns 400 when fields are missing", async () => {
@@ -93,7 +100,7 @@ describe("GET /patients/:id/records authorization", () => {
     expect(res.status).toBe(200);
     expect(res.body.total).toBe(0);
     expect(res.body.records).toEqual([]);
-    expect(res.body.patient).toBeNull();
+    expect(res.body.patient).toBeNull(); // patient details stay hidden too
   });
 
   it("admin can read a patient that dr.smith cannot", async () => {

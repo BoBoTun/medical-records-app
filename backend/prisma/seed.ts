@@ -3,17 +3,22 @@ import { randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { PrismaClient, Role } from "@prisma/client";
 
+/**
+ * Demo data generator: 1 admin, 10 doctors, patients and medical records.
+ * WARNING: clears users, patients and records first, so it is safe to re-run but destructive.
+ */
 const prisma = new PrismaClient();
 
 // Sizes can be overridden: SEED_PATIENTS=100 SEED_RECORDS=1000 npm run db:seed
 const PATIENT_COUNT = Number(process.env.SEED_PATIENTS ?? 2000);
 const RECORD_COUNT = Number(process.env.SEED_RECORDS ?? 100000);
-const BATCH_SIZE = 5000;
+const BATCH_SIZE = 5000; // rows per INSERT, keeps 100k records fast without huge statements
 
 const DOCTOR_SURNAMES = [
   "Smith", "Jones", "Brown", "Taylor", "Wilson",
   "Davies", "Evans", "Thomas", "Roberts", "Johnson",
 ];
+
 // Burmese-style names. Gendered lists keep the combinations natural.
 const MALE_NAMES = [
   "Aung Min", "Kyaw Zin", "Zaw Lin", "Htet Aung", "Min Thu", "Thura Win", "Soe Moe", "Naing Lin",
@@ -31,6 +36,8 @@ const FAMILY_SUFFIXES = [
   "Aung", "Naing", "Oo", "Tun", "Lwin", "Htun", "Win", "Soe", "Thant", "Myint",
   "Kyi", "Zin", "Han", "Swe", "Maung", "Phyu", "Hlaing", "Khaing", "Moe", "Thu",
 ];
+
+// [diagnosis, treatment] pairs picked at random for each record.
 const CASES: [diagnosis: string, treatment: string][] = [
   ["Hypertension", "Amlodipine 5mg daily, reduce salt intake"],
   ["Type 2 diabetes", "Metformin 500mg twice daily, diet plan"],
@@ -45,12 +52,16 @@ const CASES: [diagnosis: string, treatment: string][] = [
 ];
 
 const pick = <T,>(items: T[]): T => items[Math.floor(Math.random() * items.length)];
+
+/** Names need not be unique (real patients share names); the date of birth tells them apart in the UI. */
 function randomPatientName(): string {
   const female = Math.random() < 0.5;
   const given = pick(female ? FEMALE_NAMES : MALE_NAMES);
   // 70% get a family suffix, so many names have 3 words.
   return Math.random() < 0.7 ? `${given} ${pick(FAMILY_SUFFIXES)}` : given;
 }
+
+/** Age between 1 and 90. Day is capped at 28 so every month is valid. UTC avoids timezone shifts. */
 function randomBirthDate(): Date {
   const year = new Date().getFullYear() - 1 - Math.floor(Math.random() * 90);
   return new Date(Date.UTC(year, Math.floor(Math.random() * 12), 1 + Math.floor(Math.random() * 28)));
@@ -63,12 +74,14 @@ function randomPastDate(maxDaysAgo: number): Date {
 async function main() {
   const started = Date.now();
 
+  // Delete children first because of foreign keys (records -> patients/users).
   console.log("Clearing old data...");
   await prisma.medicalRecord.deleteMany();
   await prisma.patient.deleteMany();
   await prisma.user.deleteMany();
 
   console.log("Creating users...");
+  // bcrypt is slow on purpose, so hash once and reuse for all doctors.
   const adminHash = await bcrypt.hash("admin123", 10);
   const doctorHash = await bcrypt.hash("doctor123", 10);
   const doctors = DOCTOR_SURNAMES.map((surname) => ({
@@ -98,7 +111,8 @@ async function main() {
     const size = Math.min(BATCH_SIZE, RECORD_COUNT - done);
     const rows = Array.from({ length: size }, () => {
       const patientIndex = Math.floor(Math.random() * patients.length);
-      // Each patient has one "primary" doctor who writes ~90% of their records.
+      // Each patient has one "primary" doctor who writes ~90% of their records,
+      // so a doctor sees a realistic subset of patients rather than random noise.
       const primary = doctors[patientIndex % doctors.length];
       const doctor = Math.random() < 0.9 ? primary : pick(doctors);
       const [diagnosis, treatment] = pick(CASES);
@@ -107,7 +121,7 @@ async function main() {
         doctorId: doctor.id,
         diagnosis,
         treatment,
-        createdAt: randomPastDate(3 * 365),
+        createdAt: randomPastDate(3 * 365), // spread over the last 3 years
       };
     });
     await prisma.medicalRecord.createMany({ data: rows });

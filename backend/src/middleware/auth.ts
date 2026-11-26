@@ -8,13 +8,18 @@ export interface AuthUser {
   role: Role;
 }
 
+// Adds the optional `user` field to Express's Request type so handlers can read req.user.
 declare module "express-serve-static-core" {
   interface Request {
     user?: AuthUser;
   }
 }
 
-/** Verifies the Bearer token and attaches { id, role } to req.user. */
+/**
+ * Authentication middleware.
+ * Verifies the Bearer JWT and attaches { id, role } to req.user.
+ * Identity and role always come from the signed token, never from the request body or query.
+ */
 export function authenticate(req: Request, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) {
@@ -22,7 +27,10 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
   }
 
   try {
+    // Throws if the signature is wrong or the token has expired.
     const payload = jwt.verify(header.slice(7), config.jwtSecret);
+
+    // Reject tokens that are validly signed but do not carry the claims we expect.
     if (typeof payload === "string" || !payload.sub || (payload.role !== "DOCTOR" && payload.role !== "ADMIN")) {
       return res.status(401).json({ error: "Invalid token" });
     }

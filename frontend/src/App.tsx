@@ -2,8 +2,10 @@ import { useState } from "react";
 import { AuthProvider, useAuth } from "./lib/AuthContext";
 import LoginPage from "./components/LoginPage";
 import PatientList from "./components/PatientList";
-import type { Patient } from "./lib/types";
 import RecordsPanel from "./components/RecordsPanel";
+import type { Patient } from "./lib/types";
+
+/** Chooses between the login screen and the main screen, and shows who is signed in with which role. */
 function Shell() {
   const { user, logout } = useAuth();
   const [selected, setSelected] = useState<Patient | null>(null);
@@ -14,6 +16,7 @@ function Shell() {
       <header className="topbar">
         <strong>Medical Records</strong>
         <div className="topbar-right">
+          {/* Role badge makes the access level visible (purple = admin, green = doctor) */}
           <span className={`badge ${user.role === "ADMIN" ? "badge-admin" : "badge-doctor"}`}>
             {user.role === "ADMIN" ? "Admin" : "Doctor"}
           </span>
@@ -23,7 +26,8 @@ function Shell() {
       </header>
       <main className="layout">
         <PatientList selectedId={selected?.id ?? null} onSelect={setSelected} />
-                {selected ? (
+        {selected ? (
+          // key resets the panel's state (page number, data) whenever another patient is selected
           <RecordsPanel key={selected.id} patient={selected} />
         ) : (
           <section className="card">

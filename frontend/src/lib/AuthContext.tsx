@@ -13,6 +13,7 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+/** Restores the logged-in user after a page refresh. The backend has no /auth/me, so the user is stored too. */
 function loadUser(): User | null {
   try {
     // Only trust the stored user if a token is also present.
@@ -24,6 +25,10 @@ function loadUser(): User | null {
   }
 }
 
+/**
+ * Holds the current user for the whole app (similar to a shared ViewModel in mobile apps).
+ * UI role checks only change what is displayed; real enforcement is on the server.
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(loadUser);
 
@@ -45,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUnauthorizedHandler(logout);
   }, [logout]);
 
+  // Memoised so consumers only re-render when something really changes.
   const value = useMemo(() => ({ user, login, logout }), [user, login, logout]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

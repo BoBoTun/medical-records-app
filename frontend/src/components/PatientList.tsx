@@ -8,6 +8,11 @@ interface Props {
   onSelect: (patient: Patient) => void;
 }
 
+/**
+ * Left panel: patient name search + list.
+ * The server decides which patients are returned (admin: all, doctor: own);
+ * this component only changes the wording so the access level is visible.
+ */
 export default function PatientList({ selectedId, onSelect }: Props) {
   const { user } = useAuth();
   const [search, setSearch] = useState("");
@@ -15,7 +20,8 @@ export default function PatientList({ selectedId, onSelect }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Debounced search: wait 350ms after the last keystroke, ignore stale responses.
+  // Debounced search: wait 350ms after the last keystroke so we do not call the API per key press.
+  // `cancelled` is set by the cleanup, so a slow response for an old search cannot overwrite a newer one.
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -65,6 +71,7 @@ export default function PatientList({ selectedId, onSelect }: Props) {
               onClick={() => onSelect(p)}
             >
               <span>{p.name}</span>
+              {/* slice(0, 10) shows the date as stored; new Date() could shift the day by timezone */}
               <span className="muted small">DOB {p.dateOfBirth.slice(0, 10)}</span>
             </button>
           </li>
