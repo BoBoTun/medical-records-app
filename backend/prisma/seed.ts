@@ -14,13 +14,22 @@ const DOCTOR_SURNAMES = [
   "Smith", "Jones", "Brown", "Taylor", "Wilson",
   "Davies", "Evans", "Thomas", "Roberts", "Johnson",
 ];
-const FIRST_NAMES = [
-  "Aung", "Kyaw", "Zaw", "Min", "Htet", "Su", "Thida", "Mya",
-  "Hnin", "Khin", "Nandar", "Wai", "Phyo", "Thiri", "Ei", "Moe",
+// Burmese-style names. Gendered lists keep the combinations natural.
+const MALE_NAMES = [
+  "Aung Min", "Kyaw Zin", "Zaw Lin", "Htet Aung", "Min Thu", "Thura Win", "Soe Moe", "Naing Lin",
+  "Kaung Myat", "Phyo Wai", "Ye Yint", "Hein Htet", "Myo Min", "Zayar Oo", "Tun Tun", "Aye Chan",
+  "Wai Yan", "Nyi Nyi", "Lin Htet", "Kyaw Soe", "Thet Naing", "Arkar Min", "Sithu Aung", "Pyae Sone",
+  "Htoo Lwin", "Ko Ko", "Zin Ko", "Min Khant", "Yan Naing", "Than Htike",
 ];
-const LAST_NAMES = [
-  "Aye", "Naing", "Oo", "Tun", "Lwin", "Htun", "Win", "Soe",
-  "Thant", "Myint", "Kyi", "Zin", "Han", "Swe", "Maung", "Phyu",
+const FEMALE_NAMES = [
+  "Aye Aye", "Thida", "Su Su", "Mya Mya", "Hnin Si", "Khin Khin", "Nandar", "Thiri",
+  "Ei Ei", "Moe Moe", "Phyu Phyu", "Su Hlaing", "May Thu", "Nilar", "Yadanar", "Wai Wai",
+  "Hla Hla", "Mi Mi", "Thin Thin", "Cho Cho", "Ei Mon", "Shwe Sin", "Khaing Zar", "Lae Lae",
+  "Nan Htwe", "Ju Ju", "Honey", "Ngwe Zin", "Pwint Phyu", "Zar Chi",
+];
+const FAMILY_SUFFIXES = [
+  "Aung", "Naing", "Oo", "Tun", "Lwin", "Htun", "Win", "Soe", "Thant", "Myint",
+  "Kyi", "Zin", "Han", "Swe", "Maung", "Phyu", "Hlaing", "Khaing", "Moe", "Thu",
 ];
 const CASES: [diagnosis: string, treatment: string][] = [
   ["Hypertension", "Amlodipine 5mg daily, reduce salt intake"],
@@ -36,7 +45,12 @@ const CASES: [diagnosis: string, treatment: string][] = [
 ];
 
 const pick = <T,>(items: T[]): T => items[Math.floor(Math.random() * items.length)];
-
+function randomPatientName(): string {
+  const female = Math.random() < 0.5;
+  const given = pick(female ? FEMALE_NAMES : MALE_NAMES);
+  // 70% get a family suffix, so many names have 3 words.
+  return Math.random() < 0.7 ? `${given} ${pick(FAMILY_SUFFIXES)}` : given;
+}
 function randomBirthDate(): Date {
   const year = new Date().getFullYear() - 1 - Math.floor(Math.random() * 90);
   return new Date(Date.UTC(year, Math.floor(Math.random() * 12), 1 + Math.floor(Math.random() * 28)));
@@ -74,7 +88,7 @@ async function main() {
   console.log(`Creating ${PATIENT_COUNT} patients...`);
   const patients = Array.from({ length: PATIENT_COUNT }, () => ({
     id: randomUUID(),
-    name: `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`,
+    name: randomPatientName(),
     dateOfBirth: randomBirthDate(),
   }));
   await prisma.patient.createMany({ data: patients });
