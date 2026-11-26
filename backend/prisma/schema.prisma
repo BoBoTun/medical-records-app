@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  DOCTOR
+  ADMIN
+}
+
+model User {
+  id           String          @id @default(uuid()) @db.Uuid
+  username     String          @unique
+  passwordHash String          @map("password_hash")
+  name         String
+  role         Role
+  records      MedicalRecord[]
+
+  @@map("users")
+}
+
+model Patient {
+  id          String          @id @default(uuid()) @db.Uuid
+  name        String
+  dateOfBirth DateTime        @map("date_of_birth") @db.Date
+  records     MedicalRecord[]
+
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "patients_name_trgm_idx")
+  @@map("patients")
+}
+
+model MedicalRecord {
+  id        Int      @id @default(autoincrement())
+  patientId String   @map("patient_id") @db.Uuid
+  doctorId  String   @map("doctor_id") @db.Uuid
+  diagnosis String
+  treatment String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor  User    @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+
+  @@index([patientId, createdAt(sort: Desc)])
+  @@index([doctorId, patientId, createdAt(sort: Desc)])
+  @@map("medical_records")
+}
